@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class AIScript
 {
-    public int depth = 5;
+    public int depth = 2;
     public Dictionary<GameObject[,], int> table = new Dictionary<GameObject[,], int>();
     public Stack<GameObject> undo_object = new Stack<GameObject>();
     

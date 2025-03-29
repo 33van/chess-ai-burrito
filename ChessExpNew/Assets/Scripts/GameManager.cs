@@ -98,73 +98,120 @@ public class GameManager : MonoBehaviour // Main class that handles the game
         player2_turn = false;
         P1Turn();
     }
-    public void P1Turn() {
-        if (end == false) {
-            turn += 1;
-            if (turn != 1) { // performs checks of danger before allowing the turn
-                GameObject king = GameObject.Find("KingLight(Clone)");
-                if (king.GetComponent<King>().alive == false) {
-                    end = true;
-                    return;
-                }
-                if (king.GetComponent<King>().danger(true, game)) {
-                    if (king.GetComponent<King>().checkmate(true)) {
-                        end = true;
-                        return;
-                    }
-                    else
-                        p1_check = true;
-                }
-                if (king.GetComponent<King>().stalemate(true)) {
-                    end = true;
-                    return;
-                }
-            }
-            player1_turn = true;
-        }
-    }
-    public void P2Turn() {
-        if (end == false) {
-            GameObject king = GameObject.Find("KingDark(Clone)");
-            if (king.GetComponent<King>().alive == false) {
+    public void P1Turn()
+{
+    if (end == false)
+    {
+        turn += 1;
+        if (turn != 1)
+        {
+            GameObject king = GameObject.Find("KingLight(Clone)");
+            if (king.GetComponent<King>().alive == false)
+            {
                 end = true;
                 return;
             }
-            if (king.GetComponent<King>().danger(false, game)) {
-                if (king.GetComponent<King>().checkmate(false)) {
+            if (king.GetComponent<King>().danger(true, game))
+            {
+                if (king.GetComponent<King>().checkmate(true))
+                {
                     end = true;
                     return;
                 }
                 else
-                    p2_check = true;
+                    p1_check = true;
             }
-            if (king.GetComponent<King>().stalemate(false)) {
+            if (king.GetComponent<King>().stalemate(true))
+            {
                 end = true;
                 return;
             }
-            if (p_two_AI == false) {
-                player2_turn = true;
+        }
+        
+        // Check if any pawn has reached the promotion row
+        CheckPawnPromotion(true);
+
+        player1_turn = true;
+    }
+}
+
+public void P2Turn()
+{
+    if (end == false)
+    {
+        GameObject king = GameObject.Find("KingDark(Clone)");
+        if (king.GetComponent<King>().alive == false)
+        {
+            end = true;
+            return;
+        }
+        if (king.GetComponent<King>().danger(false, game))
+        {
+            if (king.GetComponent<King>().checkmate(false))
+            {
+                end = true;
+                return;
             }
-            else {
-                player2_turn = true;
-                Move best = AI2.BestMove(game, false);
-                GameObject temp = game[best.startz, best.startx];
-                game[best.startz, best.startx] = null;
-                if (game[best.endz, best.endx] != null) {
-                    GameObject temp1 = game[best.endz, best.endx];
-                    temp1.GetComponent<Piece>().alive = false;
-                    temp1.GetComponent<Piece>().targetPosition = new Vector3(-10, 0, transform.position.z);
-                    dead_pieces.Add(temp1);
+            else
+                p2_check = true;
+        }
+        if (king.GetComponent<King>().stalemate(false))
+        {
+            end = true;
+            return;
+        }
+
+        // Check if any pawn has reached the promotion row
+        CheckPawnPromotion(false);
+
+        if (p_two_AI == false)
+        {
+            player2_turn = true;
+        }
+        else
+        {
+            player2_turn = true;
+            Move best = AI2.BestMove(game, false);
+            GameObject temp = game[best.startz, best.startx];
+            game[best.startz, best.startx] = null;
+            if (game[best.endz, best.endx] != null)
+            {
+                GameObject temp1 = game[best.endz, best.endx];
+                temp1.GetComponent<Piece>().alive = false;
+                temp1.GetComponent<Piece>().targetPosition = new Vector3(-10, 0, transform.position.z);
+                dead_pieces.Add(temp1);
+            }
+            game[best.endz, best.endx] = temp;
+            game[best.endz, best.endx].GetComponent<Piece>().hasMovedBefore = true;
+            game[best.endz, best.endx].GetComponent<Piece>().MovePiece(new Vector3(best.endx - 3.5f, 0, best.endz - 3.5f));
+            player1_turn = false;
+            player2_turn = false;
+            p1_check = false;
+            p2_check = false;
+            P1Turn();
+        }
+    }
+}
+
+// Helper method to check for pawn promotion
+void CheckPawnPromotion(bool isWhite)
+{
+    for (int x = 0; x < 8; x++)
+    {
+        if (game[isWhite ? 6 : 1, x] != null) // Check the pawn row
+        {
+            GameObject pawn = game[isWhite ? 6 : 1, x];
+            if (pawn.name.Contains(isWhite ? "PawnWhite" : "PawnBlack"))
+            {
+                if ((isWhite && pawn.transform.position.z >= 3.5f) || (!isWhite && pawn.transform.position.z <= -3.5f))
+                {
+                    // Trigger promotion
+                    FindObjectOfType<PawnPromotion>().PromotePawn(pawn, isWhite ? 7 : 0, x, isWhite);
+                    game[isWhite ? 6 : 1, x] = null;
                 }
-                game[best.endz, best.endx] = temp;
-                game[best.endz, best.endx].GetComponent<Piece>().hasMovedBefore = true;
-                game[best.endz, best.endx].GetComponent<Piece>().MovePiece(new Vector3 (best.endx - 3.5f, 0, best.endz - 3.5f));
-                player1_turn = false;
-                player2_turn = false;
-                p1_check = false;
-                p2_check = false;
-                P1Turn();
             }
         }
     }
+}
+
 }
